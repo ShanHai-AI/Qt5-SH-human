@@ -93,7 +93,16 @@ pip install nvidia-tensorrt
 |crowdhuman_yolov5m.pt|拥挤人群person、head检测|链接：https://pan.baidu.com/s/1SKhgLaqolnBZU9iDmjOUOg?pwd=rgtv 提取码：rgtv
 
 
+## 界面
+![](./docs/界面.png)
+![](./docs/运行.png)
+
 ## 快速开始
 ### [口罩识别](docs/%E5%8F%A3%E7%BD%A9%E8%AF%86%E5%88%AB.md)
 ### [多人姿态估计](docs/%E5%A4%9A%E4%BA%BA%E5%A7%BF%E6%80%81%E4%BC%B0%E8%AE%A1.md)
 ### [人脸检测YOLO5Face](https://github.com/deepcam-cn/yolov5-face)
+
+
+## 参考
+https://github.com/ShanHai-AI/SH-human
+https://github.com/Javacr/PyQt5-YOLOv5
