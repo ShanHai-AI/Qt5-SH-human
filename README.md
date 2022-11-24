@@ -94,6 +94,9 @@ pip install nvidia-tensorrt
 
 
 ## 界面
+
+```运行:python main.py```
+
 ![](./docs/界面.png)
 ![](./docs/运行.png)
 
@@ -104,5 +107,5 @@ pip install nvidia-tensorrt
 
 
 ## 参考
-https://github.com/ShanHai-AI/SH-human
-https://github.com/Javacr/PyQt5-YOLOv5
+- https://github.com/ShanHai-AI/SH-human
+- https://github.com/Javacr/PyQt5-YOLOv5
