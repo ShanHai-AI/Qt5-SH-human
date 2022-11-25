@@ -8,6 +8,8 @@
 # SH-human
 目标检测；多目标跟踪；多人姿态估计；
 
+**注意：main.py 中逻辑参照[SH-human](https://github.com/ShanHai-AI/SH-human)更改即可实现同样的功能！！！**
+
 ## 简介
 基于[Yolov5_StrongSORT_OSNet](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet)的高效开发框架，主要用于**Human**，支持目标检测、多人跟踪、多人姿态估计等。[Yolov5_StrongSORT_OSNet 说明](docs/README_YoloV5%2BStrongSORT.md)
 
