@@ -102,9 +102,10 @@ pip install nvidia-tensorrt
 ## 界面
 
 ```运行:python main.py```
+可进行算法选择
 
 ![](./docs/界面.png)
-![](./docs/运行.png)
+
 
 ## 快速开始
 ### [口罩识别](docs/%E5%8F%A3%E7%BD%A9%E8%AF%86%E5%88%AB.md)
