@@ -7,6 +7,11 @@ from myutils.CustomMessageBox import MessageBox
 from myutils.capnums import Camera
 from dialog.rtsp_win import Window
 
+###gaze
+from hook import gaze_detect_facedetection
+
+# 初始化gaze模型
+model_gaze=gaze_detect_facedetection.init_model()
 
 import sys
 import os
@@ -57,8 +62,8 @@ class DetThread(QThread):
 
     def __init__(self):
         super(DetThread, self).__init__()
-        self.weights = './yolov5n.engine'           # 设置权重
-        self.current_weight = './yolov5n.engine'    # 当前权重
+        self.weights = './yolov5n.pt'           # 设置权重
+        self.current_weight = './yolov5n.pt'    # 当前权重
         self.source = '/home/cwh/桌面/SH-human-main/testvideo/fall_01.avi'                       # 视频源
         self.conf_thres = 0.25                  # 置信度
         self.iou_thres = 0.45                   # iou
@@ -66,12 +71,15 @@ class DetThread(QThread):
         self.is_continue = True                 # 继续/暂停
         self.percent_length = 1000              # 进度条
         self.rate_check = True                  # 是否启用延时
+        self.is_sktact=False
+        self.isgaze=False
+        self.isstand=False
         self.rate = 100                         # 延时HZ
         self.save_fold = './result'             # 保存文件夹
 
     def run(self,
-            yolo_weights=WEIGHTS / 'yolov5n.engine',  # model.pt path(s),
-            strong_sort_weights=WEIGHTS / 'osnet_x0_5_msmt17.engine',  # model.pt path,
+            yolo_weights=WEIGHTS / 'yolov5n.pt',  # model.pt path(s),
+            strong_sort_weights=WEIGHTS / 'osnet_x0_5_msmt17.pt',  # model.pt path,
             config_strongsort=ROOT / 'strong_sort/configs/strong_sort.yaml',
             imgsz=(640, 640),  # inference size (height, width)
             conf_thres=0.25,  # confidence threshold
@@ -292,11 +300,49 @@ class DetThread(QThread):
                         ################################################
                         # 其他算法逻辑-HOOK
                         ################################################
-                        if "pose"=="pose":
+                        # 注意力估计
+                        if self.isgaze:
+                            frame=gaze_detect_facedetection.gaze_estimate(model_gaze,im0)
+
+                        # pose
+                        if self.is_sktact:
                             # 1123
                             pose_results, vis_img, pose_results_dict=skp.skeleton_detect(outputs[i],imc)
-                            print(pose_results_dict,"pose_results_dict")
+                            ################################################
+                            # 基于规则判断动作
+                            ################################################
+                            if self.isstand:
+                                import myutils.rules as rules
+                                contact_flag = rules.isContact(pose_results)
+                                raise_hand_res = rules.is_raise_hand(pose_results)
+                                stand_up_res = rules.is_stand_up(pose_results)
+                                if contact_flag :
+                                    fight_flag = rules.isTuisang(pose_results)
+                                    if fight_flag == True:
+                                        is_fight = True
+                                    else: pass
+                                else:
+                                    if len(pose_results) == 2:
+                                        is_fight = False
+
+                                # if is_fight:
+                                #     cv2.putText(vis_img, 'fight', (40, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+                                # else:
+                                #     cv2.putText(vis_img, 'normal', (40, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+
+                                if len(raise_hand_res) != 0:
+                                    for person in raise_hand_res:
+                                        box = person['bbox']
+                                        cv2.putText(vis_img, 'raise_hand', (int(box[0]), int(box[1])+50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+
+                                if len(stand_up_res) != 0:
+                                     for person in stand_up_res:
+                                        box = person['bbox']
+                                        cv2.putText(vis_img, 'standup', (int(box[0]), int(box[1])+50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+
                             annotator.im=vis_img
+                            # print(pose_results_dict,"pose_results_dict")
+                            # annotator.im=vis_img
                             # cv2.imshow('Image', vis_img)
                             # cv2.waitKey(0)
 
@@ -312,47 +358,47 @@ class DetThread(QThread):
 
                                 # 1123 每一个跟踪结果
                                 # print(multistream_results)
-                                # ---------------- 目标未出现过 初始化其信息 -----------------
-                                if id not in multistream_results[i]:
-                                    # print("init")
-                                    # -------------------------------------------------------------------message_dict
-                                    # message_dict[id] = (位置信息, 是否过线, [是否终结本目标的OCR，结果1，结果2...], 颜色, 姓名)
-                                    # message_dict[id] = [bboxes, False, ["False", ""], "color", "unknown"]
-                                    multistream_results[i][id] = {
-                                        "skp_step": [],
-                                        "fall_flag":False,
-                                    }
-                                    print(multistream_results)
-
-                                else:
-                                    # ----------------目标出现过--------------------
-                                    # ---------------------------------------------
-                                    #                  判断跌倒
-                                    # ---------------------------------------------
-                                    print(len(multistream_results[i][id]["skp_step"]))
-                                    if len(multistream_results[i][id]["skp_step"]) < 30:
-                                        try:
-                                            person_skp = pose_results_dict[id]["keypoints"][:13]
-                                            multistream_results[i][id]["skp_step"].append(person_skp)
-                                        except:
-                                            pass
-                                    else:
-                                        print("====================== action prediction")
-                                        pts = np.array(multistream_results[i][id]["skp_step"], dtype=np.float32)
-                                        out = action_model.predict(pts, vis_img.shape[:2])
-                                        action_name = action_model.class_names[out[0].argmax()]
-
-                                        if action_name == 'Fall Down' or action_name == 'Lying Down':
-                                            print("跌倒")
-                                            multistream_results[i][id]["fall_flag"] = True
-                                        else:
-                                            multistream_results[i][id]["fall_flag"] = False
-
-                                        multistream_results[i][id]["skp_step"].clear()
-
-                                    if multistream_results[i][id]["fall_flag"]:
-                                        cv2.putText(vis_img, 'FALL', (int(bboxes[0]), int(bboxes[1])+50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
-                                    # ------------------跌倒判断结束--------------------
+                                # # ---------------- 目标未出现过 初始化其信息 -----------------
+                                # if id not in multistream_results[i]:
+                                #     # print("init")
+                                #     # -------------------------------------------------------------------message_dict
+                                #     # message_dict[id] = (位置信息, 是否过线, [是否终结本目标的OCR，结果1，结果2...], 颜色, 姓名)
+                                #     # message_dict[id] = [bboxes, False, ["False", ""], "color", "unknown"]
+                                #     multistream_results[i][id] = {
+                                #         "skp_step": [],
+                                #         "fall_flag":False,
+                                #     }
+                                #     print(multistream_results)
+                                #
+                                # else:
+                                #     # ----------------目标出现过--------------------
+                                #     # ---------------------------------------------
+                                #     #                  判断跌倒
+                                #     # ---------------------------------------------
+                                #     print(len(multistream_results[i][id]["skp_step"]))
+                                #     if len(multistream_results[i][id]["skp_step"]) < 30:
+                                #         try:
+                                #             person_skp = pose_results_dict[id]["keypoints"][:13]
+                                #             multistream_results[i][id]["skp_step"].append(person_skp)
+                                #         except:
+                                #             pass
+                                #     else:
+                                #         print("====================== action prediction")
+                                #         pts = np.array(multistream_results[i][id]["skp_step"], dtype=np.float32)
+                                #         out = action_model.predict(pts, vis_img.shape[:2])
+                                #         action_name = action_model.class_names[out[0].argmax()]
+                                #
+                                #         if action_name == 'Fall Down' or action_name == 'Lying Down':
+                                #             print("跌倒")
+                                #             multistream_results[i][id]["fall_flag"] = True
+                                #         else:
+                                #             multistream_results[i][id]["fall_flag"] = False
+                                #
+                                #         multistream_results[i][id]["skp_step"].clear()
+                                #
+                                #     if multistream_results[i][id]["fall_flag"]:
+                                #         cv2.putText(vis_img, 'FALL', (int(bboxes[0]), int(bboxes[1])+50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+                                #     # ------------------跌倒判断结束--------------------
 
                                 if save_txt:
                                     # to MOT format
@@ -477,6 +523,11 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.saveCheckBox.clicked.connect(self.is_save)
         self.load_setting()
 
+        # 新增模型算法选择
+        self.sktBox.clicked.connect(self.is_skt_act)
+        self.gazecheckBox.clicked.connect(self.is_gaze)
+        self.standBOX.clicked.connect(self.is_stand)
+
     def search_pt(self):
         pt_list = os.listdir('./weights')
         # pt_list = [file for file in pt_list if file.endswith('.pt')]
@@ -500,6 +551,28 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.det_thread.rate_check = True
         else:
             self.det_thread.rate_check = False
+    # add 骨架识别
+    def is_skt_act(self):
+        if self.sktBox.isChecked():
+            # 选中时
+            self.det_thread.is_sktact = True
+        else:
+            self.det_thread.is_sktact = False
+    #  add gaze
+    def is_gaze(self):
+        if self.gazecheckBox.isChecked():
+            # 选中时
+            self.det_thread.isgaze = True
+        else:
+            self.det_thread.isgaze = False
+
+    def is_stand(self):
+        if self.standBOX.isChecked():
+            # 选中时
+            self.det_thread.isstand = True
+        else:
+            self.det_thread.isstand = False
+
 
     def chose_rtsp(self):
         self.rtsp_window = Window()
