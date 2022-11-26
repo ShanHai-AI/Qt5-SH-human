@@ -101,8 +101,8 @@ pip install nvidia-tensorrt
 
 ```运行:python main_old_people.py```
 
-![](./docs/界面.png)
-![](./docs/运行.png)
+![](./docs/run.png)
+![](./docs/run2.png)
 
 ## 快速开始
 ### [口罩识别](docs/%E5%8F%A3%E7%BD%A9%E8%AF%86%E5%88%AB.md)
