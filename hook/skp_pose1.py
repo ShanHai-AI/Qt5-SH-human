@@ -15,7 +15,7 @@ from alfred.dl.torch.common import device
 import cv2
 import time
 import torch
-
+from pathlib import Path
 
 def process_mmdet_results(mmdet_results, cat_id=0):
     """AI is creating summary for process_mmdet_results
@@ -53,9 +53,12 @@ def init_model():
         device=args.device.lower()
         )
     '''
+    FILE = Path(__file__).resolve()
+    ROOT = FILE.parents[1]
+    # print(ROOT)
     # build the pose model from a config file and a checkpoint file
-    pose_config='mmpose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/shufflenetv2_coco_256x192.py'
-    pose_checkpoint='mmpose/weights/shufflenetv2_coco_256x192-0aba71c7_20200921.pth'
+    pose_config=str(ROOT)+'/mmpose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/shufflenetv2_coco_256x192.py'
+    pose_checkpoint=str(ROOT)+'/mmpose/weights/shufflenetv2_coco_256x192-0aba71c7_20200921.pth'
     device='cuda:0'
     pose_model = init_pose_model(
         pose_config, 
