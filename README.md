@@ -85,6 +85,7 @@ pip install nvidia-tensorrt
 | hook | 钩子目录，用于存放一些算法实现文件          |
 | [mmpose](https://github.com/open-mmlab/mmpose)     | 用于人体关键点估计 |
 | [yolov5](https://github.com/ultralytics/yolov5)     | 目标检测YOLOv5 |
+|[sleep_monitoring](https://github.com/ShanHai-AI/sleep-monitoring)|睡眠监测|
 |strong_sort     | 跟踪算法 |
 |stgcn     | 骨架行为识别算法 |
 |weights     | 模型权重 |
@@ -98,7 +99,7 @@ pip install nvidia-tensorrt
 
 ## 界面
 
-```运行:python main.py```
+```运行:python main_old_people.py```
 
 ![](./docs/界面.png)
 ![](./docs/运行.png)
