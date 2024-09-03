@@ -112,3 +112,10 @@ pip install nvidia-tensorrt
 ## 参考
 - https://github.com/ShanHai-AI/SH-human
 - https://github.com/Javacr/PyQt5-YOLOv5
+
+## 下载
+如遇无法加载摄像头以及视频流，请参考下面加载数据代码（更改yolov5，dataloader，LoadStreams）。
+
+【超级会员V5】通过百度网盘分享的文件：孔老师科技厅结题…
+链接:https://pan.baidu.com/s/1a5XkD1qgMnBWqnb0lDY-vA?pwd=367h 
+提取码:367h
